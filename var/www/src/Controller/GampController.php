@@ -15,8 +15,6 @@ class GampController extends AbstractController
     }
     public function index(): Response
     {
-
-
         // Instantiate the Analytics object
         // optionally pass TRUE in the constructor if you want to connect using HTTPS
         //$analytics = new Analytics(false);
@@ -34,6 +32,7 @@ class GampController extends AbstractController
         //
         //// When you finish bulding the payload send a hit (such as an pageview or event)
         //$res=$analytics->sendPageview();
+        for ($i = 0; $i < 100; $i++) {
 
         try {
             $ratio_data = json_decode(
@@ -88,7 +87,7 @@ class GampController extends AbstractController
         } else {
             echo $response;
         }
-
+        }
         $response = new Response();
         $response->setContent($response);
         $response->setStatusCode(200);
