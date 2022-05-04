@@ -8,6 +8,7 @@ Screenshots of the project:
 ![image info](./network.png)
 ![image info](./elasticsearch.png)
 ![image info](./elasticsearch2.png)
+![image info](./elasticsearch3.png)
 ![image info](./php-fpm.png)
 ![image info](./php-fpm2.png)
 ![image info](./nginx.png)
