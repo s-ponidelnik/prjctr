@@ -1,4 +1,4 @@
-FROM php:8.0-fpm
+FROM php:8.1-fpm
 #install some base extensions
 RUN apt-get install -y \
         libzip-dev \
