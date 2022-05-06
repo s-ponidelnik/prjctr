@@ -28,16 +28,13 @@ class GampConsole extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        for ($i = 0; $i < 1000; $i++) {
+        for ($i = 0; $i < 100; $i++) {
             $ratioData = $this->getUsdUahRation();
-            $output->writeln('Get usd_uah ration: '. json_encode($ratioData, JSON_THROW_ON_ERROR));
-            $output->write('Save to elasticsearch: '.$this->saveElastic($ratioData) ? 'success' : 'fail');
-            $output->write('...');
-            $output->write('Send ga data: '.$this->sendGaData($ratioData['buy'], $ratioData['sale']) ? 'success' : 'fail');
-            $output->write('...');
-            $output->write('Send ga4 data: '.($this->sendGa4Data('usd_uah', $ratioData['buy']) && $this->sendGa4Data('uah_usd', $ratioData['sale'])) ? 'success' : 'fail');
-            $output->write('...');
-            $output->writeln('');
+            $this->saveElastic($ratioData);
+            $this->sendGaData($ratioData['buy'], $ratioData['sale']);
+            $this->sendGa4Data('usd_uah', $ratioData['buy']);
+            $this->sendGa4Data('uah_usd', $ratioData['sale']);
+            $output->write('.');
         }
         return 0;
     }
@@ -77,7 +74,6 @@ class GampConsole extends Command
             return false;
         }
     }
-
 
     private function sendGaData($buy, $sale): bool
     {
