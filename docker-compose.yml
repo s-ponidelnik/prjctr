@@ -6,15 +6,20 @@ services:
     volumes:
       - ./etc/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./var/run/mysqld.sock:/var/run/mysqld.sock
     privileged: true
+    env_file:
+      - .env
     depends_on:
       - influxdb
+      - mysqldb
       - mongodb
       - elasticsearch
       - nginx
       - php
     links:
       - influxdb
+      - mysqldb
       - mongodb
       - elasticsearch
       - nginx
@@ -46,6 +51,14 @@ services:
       - grafana_data:/var/lib/grafana
       - ./etc/grafana/provisioning/:/etc/grafana/provisioning/
       - ./var/lib/grafana/dashboards/:/var/lib/grafana/dashboards/
+  mysqldb:
+      image: mysql:8.0.29
+      container_name: prjctr_mysql
+      env_file: .env
+      ports:
+        - "127.0.0.1:3306:3306"
+      volumes:
+        - ./var/run/mysqld.sock:/var/run/mysqld/mysqld.sock
   mongodb:
       container_name: prjctr_mongodb
       image: mongo:4.2.19
@@ -81,9 +94,11 @@ services:
     links:
       - elasticsearch
       - mongodb
+      - mysqldb
     depends_on:
       - elasticsearch
       - mongodb
+      - mysqldb
   nginx:
     container_name: prjctr_nginx
     image: nginx:1.21.6

@@ -11,6 +11,13 @@ class GampConsole extends Command
 {
     private array $errors = [];
 
+    private const GA_TID = 'UA-34629643-1';
+    private const GA_CID = '63769798';
+
+    private const GA4_CLIENT_ID = '3540034146';
+    private const GA4_MEASUREMENT_ID = 'G-HY70DVNZXM';
+    private const GA4_API_SECRET = 'EVgnlEc8Sc65By6IyTy80g';
+
     protected function configure()
     {
         $this->setName('gamp:test')->setDescription('Gamp test');
@@ -21,11 +28,16 @@ class GampConsole extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 1000; $i++) {
             $ratioData = $this->getUsdUahRation();
-            $this->saveElastic($ratioData);
-            $this->sendGaData($ratioData);
-            $output->writeln(json_encode($ratioData, JSON_THROW_ON_ERROR));
+            $output->writeln('Get usd_uah ration: '. json_encode($ratioData, JSON_THROW_ON_ERROR));
+            $output->write('Save to elasticsearch: '.$this->saveElastic($ratioData) ? 'success' : 'fail');
+            $output->write('...');
+            $output->write('Send ga data: '.$this->sendGaData($ratioData['buy'], $ratioData['sale']) ? 'success' : 'fail');
+            $output->write('...');
+            $output->write('Send ga4 data: '.($this->sendGa4Data('usd_uah', $ratioData['buy']) && $this->sendGa4Data('uah_usd', $ratioData['sale'])) ? 'success' : 'fail');
+            $output->write('...');
+            $output->writeln('');
         }
         return 0;
     }
@@ -61,15 +73,29 @@ class GampConsole extends Command
             } else {
                 return true;
             }
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             return false;
         }
     }
-    private function sendGaData($ratioData):bool{
+
+
+    private function sendGaData($buy, $sale): bool
+    {
+        return file_get_contents(
+                'https://google-analytics.com/collect?v=1&tid=' . self::GA_TID . '&cid=' . self::GA_CID . '&t=event&ec=currency_rate&ea=usd_uah&z=' . time(
+                ) . '@timestamp=' . time() . '&el=usd_uah_currency_rate&ev=' . $buy
+            ) && file_get_contents(
+                'https://google-analytics.com/collect?v=1&tid=' . self::GA_TID . '&cid=' . self::GA_CID . '&t=event&ec=currency_rate&ea=uah_usd&z=' . time(
+                ) . '@timestamp=' . time() . '&el=uah_usd_currency_rate&ev=' . $sale
+            );
+    }
+
+    private function sendGa4Data($type, $value): bool
+    {
         try {
             $curl = curl_init();
             curl_setopt_array($curl, [
-                CURLOPT_URL            => "https://www.google-analytics.com/mp/collect?measurement_id=G-HY70DVNZXM&api_secret=EVgnlEc8Sc65By6IyTy80g",
+                CURLOPT_URL            => "https://www.google-analytics.com/mp/collect?measurement_id=" . self::GA4_MEASUREMENT_ID . "&api_secret=" . self::GA4_API_SECRET,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING       => "",
                 CURLOPT_MAXREDIRS      => 10,
@@ -78,10 +104,13 @@ class GampConsole extends Command
                 CURLOPT_CUSTOMREQUEST  => "POST",
                 CURLOPT_POSTFIELDS     => json_encode(
                     [
-                        'client_id' => '3540034146',
+                        'client_id' => self::GA4_CLIENT_ID,
                         'events'    => [
-                            'name'   => 'USD_UAH_RATIO',
-                            'params' => $ratioData
+                            'name' => $type . '_ratio',
+                            'ec'   => 'currency_rate',
+                            'ea'   => $type,
+                            'el'   => $type . '_currency_rate',
+                            'ev'   => $value,
                         ]
                     ],
                     JSON_THROW_ON_ERROR
